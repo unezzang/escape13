@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>효자동 203호</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { margin:0; overflow:hidden; font-family:sans-serif; background:black; color:white;}
+#ui { position:fixed; top:10px; left:10px; z-index:10;}
+button { padding:10px; margin:5px;}
+#textBox {
+ position:fixed; bottom:0; width:100%; background:rgba(0,0,0,0.8);
+ padding:15px; display:none;
+}
+#kakao {
+ position:fixed; right:10px; bottom:80px; width:250px;
+ background:#222; border-radius:10px; padding:10px; display:none;
+}
+.msg { margin:5px 0;}
+.me { text-align:right; color:#ffd;}
+.other { text-align:left; color:#9df;}
+#timer { position:fixed; top:10px; right:10px;}
+.flash {
+ animation: flash 0.2s infinite;
+}
+@keyframes flash {
+ 0%{background:black;}
+ 50%{background:white;}
+ 100%{background:black;}
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+<button onclick="showStory()">게임 시작</button>
+<button onclick="useHint()">힌트 (3)</button>
+</div>
+
+<div id="timer">30:00</div>
+<div id="textBox"></div>
+<div id="kakao"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+
+<script>
+// =========================
+// 기본 설정
+// =========================
+let scene, camera, renderer;
+let currentRoom = "room203";
+let hints = 3;
+let time = 1800;
+let solved = 0;
+
+// =========================
+// 진동
+// =========================
+function vibrate(ms=200){
+ if(navigator.vibrate) navigator.vibrate(ms);
+}
+
+// =========================
+// 3D 초기화
+// =========================
+function init3D(){
+ scene = new THREE.Scene();
+ camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+ renderer = new THREE.WebGLRenderer();
+ renderer.setSize(window.innerWidth, window.innerHeight);
+ document.body.appendChild(renderer.domElement);
+
+ let light = new THREE.PointLight(0xffffff,1);
+ light.position.set(0,2,2);
+ scene.add(light);
+
+ camera.position.z = 3;
+
+ createRoom("room203");
+
+ animate();
+}
+
+// =========================
+// 방 생성
+// =========================
+function createRoom(name){
+ scene.clear();
+
+ let geometry = new THREE.BoxGeometry(5,5,5);
+ let material = new THREE.MeshBasicMaterial({color:0x111111, wireframe:true});
+ let cube = new THREE.Mesh(geometry, material);
+ scene.add(cube);
+
+ if(name==="room203"){
+ showText("문이 잠겨 있다… 벽에 이상한 낙서가 있다.");
+}
+
+ if(name==="corridor"){
+ showText("복도… 누군가 서있던 흔적…");
+ randomGhost();
+}
+
+ if(name==="bathroom"){
+ showText("거울에 피로 글씨가 적혀있다…");
+}
+
+ if(name==="secret"){
+ showText("숨겨진 방… 서민교의 흔적…");
+}
+
+ currentRoom = name;
+}
+
+// =========================
+// 이동
+// =========================
+function nextRoom(){
+ if(currentRoom==="room203") createRoom("corridor");
+ else if(currentRoom==="corridor") createRoom("bathroom");
+ else if(currentRoom==="bathroom") createRoom("secret");
+ else if(currentRoom==="secret") ending();
+}
+
+// =========================
+// 텍스트
+// =========================
+function showText(txt){
+ let box = document.getElementById("textBox");
+ box.style.display="block";
+ box.innerHTML = txt;
+ vibrate(100);
+ setTimeout(()=>box.style.display="none",3000);
+}
+
+// =========================
+// 카톡 시스템
+// =========================
+function kakaoMessage(text){
+ let box = document.getElementById("kakao");
+ box.style.display="block";
+
+ let div = document.createElement("div");
+ div.className="msg other";
+ div.innerText = "서민교: ...";
+ box.appendChild(div);
+
+ let i=0;
+ let typing = setInterval(()=>{
+  div.innerText = "서민교: " + text.slice(0,i);
+  i++;
+  vibrate(20);
+  if(i>text.length){
+    clearInterval(typing);
+    div.innerText += " ✓";
+  }
+ },50);
+}
+
+// =========================
+// 공포 연출
+// =========================
+function randomGhost(){
+ setTimeout(()=>{
+  document.body.classList.add("flash");
+  vibrate(500);
+  setTimeout(()=>{
+   document.body.classList.remove("flash");
+  },500);
+ },3000);
+}
+
+// =========================
+// 퍼즐 (예시 1)
+// =========================
+function puzzle1(){
+ let answer = prompt("벽 낙서: '뒤를 보지마'");
+ if(answer==="뒤를 보지마"){
+  solved++;
+  showText("철컥… 문이 열린다.");
+  nextRoom();
+ } else {
+  showText("틀렸다…");
+ }
+}
+
+// =========================
+// 힌트
+// =========================
+function useHint(){
+ if(hints<=0) return;
+ hints--;
+ showText("힌트: 보지 말라는 건… 정말 보면 안 된다.");
+}
+
+// =========================
+// 타이머
+// =========================
+setInterval(()=>{
+ time--;
+ let m = Math.floor(time/60);
+ let s = time%60;
+ document.getElementById("timer").innerText = m+":"+("0"+s).slice(-2);
+
+ if(time<=0){
+  showText("시간이 끝났다… 뒤에 누가 있다.");
+ }
+},1000);
+
+// =========================
+// 스토리
+// =========================
+function showStory(){
+ alert(`
+"효자동 203호"
+
+너는 친구 서민교의 마지막 메시지를 받았다.
+
+'절대 뒤를 보지 마.'
+
+그 이후 연락이 끊겼다.
+
+그의 집… 203호.
+
+문을 열자 안에서 잠긴다.
+
+그리고 핸드폰이 울린다.
+`);
+ init3D();
+
+ setTimeout(()=>{
+  kakaoMessage("너… 들어왔지?");
+ },2000);
+
+ setTimeout(()=>{
+  kakaoMessage("절대 뒤돌아보지 마");
+ },5000);
+
+ setTimeout(()=>{
+  puzzle1();
+ },7000);
+}
+
+// =========================
+// 엔딩
+// =========================
+function ending(){
+ showText("문이 열린다… 밖이다…");
+
+ setTimeout(()=>{
+  alert(`
+밖으로 나왔다.
+
+하지만 휴대폰이 울린다.
+
+서민교:
+"이제 네가 203호야"
+
+(뒤에서 문이 닫히는 소리)
+`);
+ location.reload();
+ },2000);
+}
+
+// =========================
+// 렌더링
+// =========================
+function animate(){
+ requestAnimationFrame(animate);
+ renderer.render(scene,camera);
+}
+</script>
+
+</body>
+</html>
