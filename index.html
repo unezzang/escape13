@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>203호</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+
+<style>
+body {margin:0;background:black;font-family:sans-serif;overflow:hidden;}
+
+#start {
+position:fixed;width:100%;height:100%;
+background:black;color:white;
+display:flex;justify-content:center;align-items:center;
+text-align:center;z-index:9999;
+}
+
+#kakao {
+position:fixed;bottom:0;width:100%;height:35%;
+background:#b2c7da;display:none;
+}
+
+#header {background:#3c1e1e;color:white;padding:10px;}
+#chat {height:80%;overflow:auto;padding:10px;}
+
+.msg {background:white;padding:8px;margin:5px;border-radius:10px;}
+.me {background:yellow;text-align:right;}
+
+#timer {position:fixed;top:10px;right:10px;color:white;}
+#hint {position:fixed;top:10px;left:10px;color:white;}
+#uiText {
+position:fixed;bottom:38%;width:100%;
+text-align:center;color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">
+[203호]<br><br>
+“...문이 잠겼다”<br><br>
+터치해서 시작
+</div>
+
+<div id="kakao">
+<div id="header">민교 (1)</div>
+<div id="chat"></div>
+</div>
+
+<div id="timer">30:00</div>
+<div id="hint">힌트(3)</div>
+<div id="uiText">화면 중앙으로 조준 후 터치</div>
+
+<a-scene>
+
+<a-sky color="#000"></a-sky>
+
+<!-- 방1 -->
+<a-box id="mirror" position="0 1 -3" color="gray"></a-box>
+<a-box id="door1" position="2 1 -3" color="red"></a-box>
+
+<!-- 방2 -->
+<a-box id="paper" position="8 1 -3" color="white"></a-box>
+<a-box id="door2" position="10 1 -3" color="blue"></a-box>
+
+<!-- 방3 -->
+<a-box id="photo" position="-8 1 -3" color="yellow"></a-box>
+<a-box id="door3" position="-10 1 -3" color="green"></a-box>
+
+<!-- 방4 -->
+<a-box id="finalDoor" position="0 1 -10" color="purple"></a-box>
+
+<a-entity id="player" position="0 1.6 0">
+<a-camera>
+<a-cursor></a-cursor>
+</a-camera>
+</a-entity>
+
+</a-scene>
+
+<script>
+
+let time=1800;
+let hints=3;
+let stage=0;
+
+let chat=document.getElementById("chat");
+
+// 시작
+document.getElementById("start").onclick=()=>{
+document.getElementById("start").style.display="none";
+document.getElementById("kakao").style.display="block";
+vib([300,100,300]);
+intro();
+timer();
+};
+
+// 진동
+function vib(p){navigator.vibrate(p);}
+
+// 카톡
+function msg(t,delay=0){
+setTimeout(()=>{
+let d=document.createElement("div");
+d.className="msg";
+d.innerText=t;
+chat.appendChild(d);
+vib(100);
+chat.scrollTop=chat.scrollHeight;
+},delay);
+}
+
+// 스토리
+function intro(){
+msg("은혜야...");
+msg("너도 203호 들어왔지?",1500);
+msg("나 먼저 들어왔는데… 문이 잠겼어",3000);
+msg("이 방 이상해",4500);
+msg("거울부터 확인해봐",6000);
+}
+
+// 타이머
+function timer(){
+setInterval(()=>{
+time--;
+let m=Math.floor(time/60);
+let s=time%60;
+document.getElementById("timer").innerText=
+`${m}:${s<10?"0":""}${s}`;
+
+if(time<=0){
+alert("시간초과…");
+location.reload();
+}
+},1000);
+}
+
+// 힌트
+document.getElementById("hint").onclick=()=>{
+if(hints<=0)return alert("힌트 없음");
+hints--;
+vib(200);
+alert("순서대로 조사해");
+document.getElementById("hint").innerText=`힌트(${hints})`;
+};
+
+// 이동 (터치 이동)
+document.body.addEventListener("touchstart",()=>{
+let p=document.querySelector("#player");
+let pos=p.getAttribute("position");
+pos.z -= 1;
+p.setAttribute("position",pos);
+});
+
+// 퍼즐 1 (거울)
+mirror.onclick=()=>{
+let a=prompt("거울 글자가 뒤집혀 있다");
+if(a==="HELP"){
+stage=1;
+msg("거울 맞췄어?");
+}
+};
+
+// 퍼즐 2
+door1.onclick=()=>{
+if(stage<1)return alert("잠김");
+let a=prompt("문 단어 입력");
+if(a==="OPEN"){
+stage=2;
+vib([200,100,200]);
+msg("문이 열렸어...");
+}
+};
+
+// 퍼즐 3
+paper.onclick=()=>{
+if(stage<2)return alert("...");
+let a=prompt("종이 숫자 조합?");
+if(a==="4132"){
+stage=3;
+msg("이상한 소리가 들려");
+vib([500,100,500]);
+}
+};
+
+// 퍼즐 4 (사진 퍼즐 느낌)
+photo.onclick=()=>{
+if(stage<3)return alert("...");
+let a=prompt("사진 속 단어?");
+if(a==="DEAD"){
+stage=4;
+msg("누가 보고 있어...");
+}
+};
+
+// 퍼즐 5
+door2.onclick=()=>{
+if(stage<4)return alert("잠김");
+stage=5;
+msg("다음 방으로 가");
+};
+
+// 퍼즐 6
+door3.onclick=()=>{
+if(stage<5)return alert("잠김");
+stage=6;
+msg("마지막이다...");
+};
+
+// 퍼즐 7~9 (간단 확장)
+finalDoor.onclick=()=>{
+if(stage<6)return alert("잠김");
+let a=prompt("살고 싶어?");
+if(a==="YES"){
+stage=10;
+ending();
+}
+};
+
+// 엔딩
+function ending(){
+vib([1000,200,1000]);
+alert("탈출 성공… 하지만 뒤를 보지 마");
+}
+
+</script>
+
+</body>
+</html>
